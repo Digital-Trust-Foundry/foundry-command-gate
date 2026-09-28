@@ -1,0 +1,8 @@
+#!/bin/sh
+# Fail closed when Node is missing. A hook Claude Code cannot start does not block.
+if ! command -v node >/dev/null 2>&1; then
+  echo "Foundry gate: Node.js is not on PATH. The command was blocked." >&2
+  exit 2
+fi
+dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+exec node "$dir/foundry-gate.mjs"

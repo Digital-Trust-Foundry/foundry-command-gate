@@ -1,0 +1,4 @@
+[
+  { "program": "git", "subcommand": "push" },
+  { "program": "gh", "subcommand": ["pr", "merge"] }
+]

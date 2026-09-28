@@ -1,0 +1,29 @@
+{
+  "description": "Deny policy commands until Foundry verifies the exact tool input.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh ${CLAUDE_PLUGIN_ROOT}/scripts/foundry-gate",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh ${CLAUDE_PLUGIN_ROOT}/scripts/foundry-gate",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
