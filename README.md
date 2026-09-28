@@ -1,6 +1,10 @@
 # Foundry Command Gate
 
-A Claude Code plugin. It denies a shell command the organization names until a Foundry Wallet signer approves that exact command. A retry of the same command is allowed once. If Foundry cannot be reached, the command does not run.
+A Claude Code plugin. It stops before a shell command the organization names, and an officer of the company signs that exact command in a Foundry Wallet. A retry of the same command is allowed once. A different command needs a new signature. If Foundry cannot be reached, the command does not run.
+
+The signature remains, and an auditor can verify it after the chat is gone. Use it when that command moves money, changes a live system, or commits the company to someone outside.
+
+A Foundry tenant is required. To talk about that command, email sales@digitaltrustfoundry.com.
 
 The policy that ships names `git push` and `gh pr merge` so the hook can be tried. Replace `policy/default.json`, or set `policy` in the tenant config, with the commands an officer should sign.
 
@@ -31,7 +35,7 @@ install -m 0600 /dev/null "$CLAUDE_PLUGIN_DATA/config.json"
 
 A missing or world-readable config blocks a gated command. Commands outside the policy are unchanged.
 
-The signer sees the command in Foundry Wallet. Approving a different command does not unlock the one that was denied. After approval, retry the identical command. The next one needs a new approval.
+The officer sees the command in Foundry Wallet and signs it. Signing a different command does not unlock the one that was denied. After the signature, retry the identical command. The next one needs a new signature.
 
 ## Tests
 
