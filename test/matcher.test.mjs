@@ -62,6 +62,7 @@ test("forms the parser cannot read are refused as ambiguous", () => {
     "g\\it push",
     "git $'push'",
     "GIT=git; $GIT push",
+    "c='git'; $c push",
     "x=push; git $x",
     'bash <<< "git push"',
     'printf "git push" | sh',
