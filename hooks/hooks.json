@@ -1,5 +1,5 @@
 {
-  "description": "Deny policy commands until Foundry verifies the exact tool input.",
+  "description": "Deny the commands named in the plugin settings until a Foundry Wallet signer approves the exact command.",
   "hooks": {
     "PreToolUse": [
       {

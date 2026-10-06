@@ -1,13 +1,54 @@
 {
   "name": "foundry-gate",
-  "displayName": "Foundry Gate",
-  "version": "0.1.0",
-  "description": "Denies a named command until an officer signs that exact command in a Foundry Wallet, then allows it once.",
+  "displayName": "Foundry Command Gate",
+  "version": "0.2.0",
+  "description": "Stops the shell commands your organization names, such as git push or a deploy, until an officer approves that exact command in Foundry Wallet. Then it runs once.",
   "author": {
     "name": "Digital Trust Foundry",
     "url": "https://github.com/Digital-Trust-Foundry/foundry-command-gate"
   },
+  "homepage": "https://github.com/Digital-Trust-Foundry/foundry-command-gate",
   "repository": "https://github.com/Digital-Trust-Foundry/foundry-command-gate",
+  "documentationUrl": "https://github.com/Digital-Trust-Foundry/foundry-command-gate#readme",
   "license": "LicenseRef-DTF-Command-Gate",
-  "keywords": ["foundry", "approval", "hooks"]
+  "keywords": [
+    "approval",
+    "sign-off",
+    "human approval",
+    "git push",
+    "deploy",
+    "security",
+    "governance",
+    "audit trail",
+    "compliance",
+    "hooks",
+    "foundry"
+  ],
+  "userConfig": {
+    "endpoint": {
+      "type": "string",
+      "title": "Foundry endpoint",
+      "description": "Address of your Foundry tenant, for example https://yourcompany.digitaltrustfoundry.com",
+      "required": true
+    },
+    "api_key": {
+      "type": "string",
+      "title": "API key",
+      "description": "Tenant API key that can create and read trustables. Kept in the system keychain.",
+      "sensitive": true,
+      "required": true
+    },
+    "signing_file": {
+      "type": "file",
+      "title": "Signing file",
+      "description": "JSON file naming the request schema and who signs. The README shows the format.",
+      "required": true
+    },
+    "commands": {
+      "type": "string",
+      "title": "Gated commands",
+      "description": "Commands that need a signature, separated by commas.",
+      "default": "git push, gh pr merge"
+    }
+  }
 }
