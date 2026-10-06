@@ -60,14 +60,14 @@ The signing file names the request schema registered on your tenant and who sign
 }
 ```
 
-Name more candidates and raise `threshold` when a command needs more than one officer.
+Name more candidates and raise `threshold` when a command needs more than one officer. Name only people who sign in Foundry Wallet: an approval signed by a custodial signer, which signs on the server by itself, is refused.
 
 ## How an approval works
 
 1. Claude runs a gated command. The gate stops it and opens a request in Foundry.
 2. The officer sees the request in Foundry Wallet: the command, the working directory, the branch and commit for git commands, and a short hash.
 3. The officer approves or rejects it.
-4. Claude retries the identical command. The gate checks the signature with Foundry, records a claim on the approval, and lets the command continue to Claude Code's own permission rules. It never grants a command those rules would refuse.
+4. Claude retries the identical command. The gate checks the signature with Foundry, checks that a person signed it in Foundry Wallet, records a claim on the approval, and lets the command continue to Claude Code's own permission rules. It never grants a command those rules would refuse.
 5. The approval is used. The next run of the same command opens a new request.
 
 An approval expires 15 minutes after it is signed. A rejected or expired request opens a new one the next time the command is tried. Single use is enforced in Foundry, so editing files on the machine cannot reuse an approval, and two copies of the command started together run only once.
