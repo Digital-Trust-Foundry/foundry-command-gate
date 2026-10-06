@@ -26,7 +26,14 @@ export const CALL_BUDGET_MS = 7000;
 export const APPROVAL_TTL_MS = 15 * 60 * 1000;
 export const DEFAULT_COMMANDS = "git push, gh pr merge";
 
-const CLIENT_OPTIONS = { timeoutMs: 3000, maxRetries: 1 };
+// Reads get 3 s per attempt and one retry. A write is sent once and can take
+// seconds on Foundry's side (opening a Wallet request is about 7 s on a busy
+// tenant), so it gets whatever is left of the budget.
+const CLIENT_OPTIONS = { timeoutMs: CALL_BUDGET_MS, maxRetries: 1 };
+const READ_ATTEMPT_MS = 3000;
+// A create still running on Foundry is not sent again this soon, or the
+// signer would get a second prompt for the same command.
+const CREATE_SETTLE_MS = 15000;
 const SUBTITLE_MAX = 240;
 
 const VALUE_FLAGS = new Set([
@@ -654,25 +661,36 @@ export function createBody(context, subject, hash, policyId) {
  * same idempotency key instead of putting a second prompt on the signer's device.
  */
 async function sendCreate(context, hash, grant) {
-  const outcome = await context.client.createTrustable(grant.body, context.call());
+  await writeGrant(context.env, hash, { ...grant, sent_at: context.now() });
+  let outcome;
+  try {
+    outcome = await context.client.createTrustable(grant.body, context.write());
+  } catch (err) {
+    // Foundry keeps working on a create the gate stopped waiting for. The
+    // saved body is resent under the same key on a later try.
+    if (err instanceof FoundryError && err.mayHaveLanded && ["TIMEOUT", "ATTEMPT_TIMEOUT"].includes(err.code)) {
+      return null;
+    }
+    throw err;
+  }
   if (outcome.kind === "rejected") {
     await dropGrant(context.env, hash);
     throw new Error("Foundry refused to open the approval request.");
   }
-  await writeGrant(context.env, hash, {
+  const pending = {
     status: "pending",
     said: outcome.said,
     request_id: outcome.request_id ?? outcome.requestId ?? null,
     content_hash: hash,
     command: grant.body.subject.primary.description,
     created_at: new Date(context.now()).toISOString(),
-  });
+  };
+  await writeGrant(context.env, hash, pending);
+  return pending;
 }
 
 async function openRequest(context, subject, hash, policyId) {
-  const grant = { status: "creating", body: createBody(context, subject, hash, policyId) };
-  await writeGrant(context.env, hash, grant);
-  await sendCreate(context, hash, grant);
+  await sendCreate(context, hash, { status: "creating", body: createBody(context, subject, hash, policyId) });
 }
 
 function claimEvents(detail) {
@@ -784,7 +802,7 @@ async function checkApproval(context, input, subject, hash, policyId, grant) {
       event_content: { content_hash: hash, claim_id: claimId },
       idempotency_key: `claim:${grant.said}:${claimId}`,
     },
-    context.call(),
+    context.write(),
   );
   const after = await client.getTrustable(grant.said, context.call());
   const first = claimEvents(after)[0];
@@ -864,8 +882,12 @@ async function preToolUse(input, context) {
     return approvalNeeded(subject, hash, grant ? "That approval was already used." : "");
   }
   if (grant.status === "creating" && grant.body) {
-    await sendCreate(ctx, hash, grant);
-    return approvalNeeded(subject, hash, "");
+    if (context.now() - (grant.sent_at ?? 0) < CREATE_SETTLE_MS) {
+      return approvalNeeded(subject, hash, "Foundry is still opening the request.");
+    }
+    const pending = await sendCreate(ctx, hash, grant);
+    if (!pending) return approvalNeeded(subject, hash, "Foundry is still opening the request.");
+    return checkApproval(ctx, input, subject, hash, policyId, pending);
   }
   if (typeof grant.said !== "string") {
     await openRequest(ctx, subject, hash, policyId);
@@ -906,7 +928,7 @@ async function settle(input, context) {
         event_content: { content_hash: hash, claim_id: grant.claim_id, tool_use_id: input.tool_use_id },
         idempotency_key: `execute:${grant.said}`,
       },
-      context.call(),
+      context.write(),
     );
     if (outcome?.kind === "completed") await dropGrant(context.env, hash);
   }
@@ -931,7 +953,8 @@ export async function handleHookInput(raw, options = {}) {
   const context = {
     env,
     now,
-    call: () => ({ deadlineAt, signal: options.signal }),
+    call: () => ({ deadlineAt, signal: options.signal, attemptTimeoutMs: READ_ATTEMPT_MS }),
+    write: () => ({ deadlineAt, signal: options.signal, attemptTimeoutMs: Math.max(deadlineAt - now(), 1) }),
     makeClient: (endpoint, apiKey) => new FoundryClient(endpoint, apiKey, CLIENT_OPTIONS),
   };
 
