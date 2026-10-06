@@ -57,12 +57,18 @@ export function canonicalJson(value) {
 }
 
 /**
- * What an approval covers. Credentials are removed from the command before it
- * is hashed or sent, so the record in Foundry never holds them and an auditor
- * can recompute the hash from what was signed.
+ * What an approval covers. The command is sent with credentials removed, so
+ * the record in Foundry never holds them, and with a hash of the full command,
+ * so two commands that differ only in a credential never share an approval.
  */
 export function approvalSubject(toolName, command, cwd, git) {
-  return { tool_name: toolName, command: redact(command), cwd, git: git ?? null };
+  return {
+    tool_name: toolName,
+    command: redact(command),
+    command_sha256: createHash("sha256").update(command, "utf8").digest("hex"),
+    cwd,
+    git: git ?? null,
+  };
 }
 
 export function contentHash(subject) {
@@ -73,12 +79,16 @@ export function shortHash(hash) {
   return hash.slice(0, 12);
 }
 
-/** `https://user:token@host` and `GH_TOKEN=…` style values never leave the machine. */
+/**
+ * `https://user:token@host` and `GH_TOKEN=…` style values never leave the
+ * machine. A value holding shell syntax is left as it is, so redaction can
+ * never hide something the shell would run from the officer.
+ */
 export function redact(command) {
   return command
-    .replace(/([a-z][a-z0-9+.-]*:\/\/)[^\s/@'"]+@/gi, "$1***@")
+    .replace(/([a-z][a-z0-9+.-]*:\/\/)[^\s/@'"`$;&|<>()\\]+@/gi, "$1***@")
     .replace(
-      /\b([A-Za-z_][A-Za-z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_KEY|APIKEY|ACCESS_KEY)[A-Za-z0-9_]*)=("[^"]*"|'[^']*'|\S+)/gi,
+      /\b([A-Za-z_][A-Za-z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_KEY|APIKEY|ACCESS_KEY)[A-Za-z0-9_]*)=("[^"`$\\]*"|'[^']*'|[^\s"'`$\\;&|<>()]+)(?=\s|$)/gi,
       "$1=***",
     );
 }

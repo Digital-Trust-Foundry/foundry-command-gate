@@ -89,7 +89,7 @@ test("the first try opens one request with only what the approval needs", async 
     const [create] = creates(stub.requests);
     assert.equal(create.authorization, "Bearer test-key");
     const body = create.body;
-    assert.deepEqual(Object.keys(body.content).sort(), ["command", "content_hash", "cwd", "git", "policy_id", "tool_name"]);
+    assert.deepEqual(Object.keys(body.content).sort(), ["command", "command_sha256", "content_hash", "cwd", "git", "policy_id", "tool_name"]);
     assert.equal(body.content.cwd, "/work");
     assert.equal(body.content.policy_id, "git push");
     assert.doesNotMatch(JSON.stringify(body), /ghp_secret|session-1|Push the branch/);
