@@ -209,6 +209,19 @@ test("an approval unused for 15 minutes expires and a new request opens", async 
   });
 });
 
+test("an approval signed on the server by a custodial signer does not count", async () => {
+  await withStub(async (stub) => {
+    const { env, data } = await setup(stub.endpoint);
+    stub.state.signerMode = "custodial";
+    await run(hookInput("git push"), env);
+    const result = await run(hookInput("git push"), env);
+    assert.equal(decisionOf(result), "deny");
+    assert.match(reasonOf(result), /not signed by a person in Foundry Wallet/);
+    assert.equal(appends(stub.requests, "claim").length, 0);
+    assert.equal((await grants(data)).length, 0);
+  });
+});
+
 test("a failed verification stays denied", async () => {
   await withStub(async (stub) => {
     const { env } = await setup(stub.endpoint);

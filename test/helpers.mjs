@@ -90,6 +90,7 @@ export function startStub() {
     hangCreatesOnce: false,
     beforeClaim: null,
     executePending: false,
+    signerMode: "edge",
   };
 
   const json = (res, status, body) => {
@@ -121,6 +122,13 @@ export function startStub() {
       const createdAt = new Date().toISOString();
       trustables.set(said, { body, requestId, createdAt, events: [] });
       return json(res, 202, { said, request_id: requestId, created_at: createdAt, status: { current_state: "pending_signature" } });
+    }
+
+    if (req.method === "GET" && req.url.startsWith("/api/v1/trustables/signers")) {
+      const mode = new URL(req.url, "http://stub").searchParams.get("mode");
+      const all = [{ aid: "Esigner", display_name: "Release owner", type: "officer", mode: state.signerMode }];
+      const signers = all.filter((signer) => !mode || signer.mode === mode);
+      return json(res, 200, { success: true, data: { signers, total: signers.length } });
     }
 
     const requestMatch = req.url.match(/^\/api\/v1\/trustables\/requests\/([^/]+)$/);
