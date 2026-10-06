@@ -771,7 +771,6 @@ async function checkApproval(context, input, subject, hash, policyId, grant) {
   // only if ours is the first claim. Two identical calls at the same moment
   // both append, and both see the same first one.
   const claimId = randomUUID();
-  await writeGrant(env, hash, { ...grant, status: "claiming", claim_id: claimId });
   await client.appendEvent(
     grant.said,
     {
@@ -792,13 +791,20 @@ async function checkApproval(context, input, subject, hash, policyId, grant) {
   if (first?.event_content?.claim_id !== claimId) {
     return approvalNeeded(subject, hash, "That approval was just used by another command.");
   }
-  await writeGrant(env, hash, {
-    ...grant,
-    status: "claimed",
-    claim_id: claimId,
-    tool_use_id: input.tool_use_id ?? null,
-    claimed_at: new Date(context.now()).toISOString(),
-  });
+  // The claim in Foundry is what counts. The local note only lets PostToolUse
+  // record the run, so failing to write it (another process holding the file
+  // on Windows) must not stop a command that has already claimed its approval.
+  try {
+    await writeGrant(env, hash, {
+      ...grant,
+      status: "claimed",
+      claim_id: claimId,
+      tool_use_id: input.tool_use_id ?? null,
+      claimed_at: new Date(context.now()).toISOString(),
+    });
+  } catch {
+    // The run record is skipped; single use is already enforced.
+  }
   return { exitCode: 0 };
 }
 
