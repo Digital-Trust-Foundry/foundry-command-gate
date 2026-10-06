@@ -1,0 +1,15 @@
+{
+  "name": "foundry-command-gate",
+  "description": "Foundry Command Gate, published by Digital Trust Foundry.",
+  "owner": {
+    "name": "Digital Trust Foundry",
+    "url": "https://github.com/Digital-Trust-Foundry"
+  },
+  "plugins": [
+    {
+      "name": "foundry-gate",
+      "source": "./",
+      "description": "Stops the shell commands your organization names until an officer approves that exact command in Foundry Wallet."
+    }
+  ]
+}
