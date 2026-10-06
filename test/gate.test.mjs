@@ -271,17 +271,24 @@ test("the branch and commit come from the repository the command acts on", async
   });
 });
 
-test("a create that timed out is resent with the same key, not as a second request", async () => {
+test("a slow create asks for approval, waits, then resends with the same key", async () => {
   await withStub(async (stub) => {
     const { env } = await setup(stub.endpoint);
+    stub.state.signed = false;
+    stub.state.requestStatus = "pending";
     stub.state.hangCreatesOnce = true;
-    const timedOut = await run(hookInput("git push"), env, { deadlineAt: Date.now() + 400 });
-    assert.equal(timedOut.exitCode, 2);
-    const retry = await run(hookInput("git push"), env);
-    assert.equal(decisionOf(retry), "deny");
+    const slow = await run(hookInput("git push"), env, { deadlineAt: Date.now() + 400 });
+    assert.equal(decisionOf(slow), "deny", "a create Foundry may still finish is not an error");
+    assert.match(reasonOf(slow), /needs approval in Foundry Wallet/);
+
+    const soon = await run(hookInput("git push"), env);
+    assert.match(reasonOf(soon), /still opening the request/);
+    assert.equal(creates(stub.requests).length, 1, "no second prompt while the first create may be running");
+
+    const later = await run(hookInput("git push"), env, { now: () => Date.now() + 20_000 });
+    assert.match(reasonOf(later), /still waiting/);
     const sent = creates(stub.requests);
     assert.equal(sent.length, 2);
-    assert.equal(sent[1].body.idempotency_key, sent[0].body.idempotency_key);
     assert.deepEqual(sent[1].body, sent[0].body);
   });
 });
@@ -289,6 +296,9 @@ test("a create that timed out is resent with the same key, not as a second reque
 test("a slow or unreachable Foundry blocks the command", async () => {
   await withStub(async (stub) => {
     const { env } = await setup(stub.endpoint);
+    stub.state.signed = false;
+    stub.state.requestStatus = "pending";
+    await run(hookInput("git push"), env);
     stub.state.hang = true;
     const slow = await run(hookInput("git push"), env, { deadlineAt: Date.now() + 300 });
     assert.equal(slow.exitCode, 2);
