@@ -736,6 +736,23 @@ function notFound(err) {
   return err instanceof FoundryError && err.status === 404;
 }
 
+/** The AIDs that signed, read from Foundry's own record of the approval. */
+function signedAids(detail) {
+  const aids = new Set();
+  for (const signer of detail?.signature_progress?.signers ?? []) {
+    if (signer?.status === "signed" && signer.actor_aid) aids.add(signer.actor_aid);
+  }
+  for (const signature of detail?.signatures ?? []) {
+    if (signature?.signer_aid) aids.add(signature.signer_aid);
+  }
+  // With no candidate list the representative signs alone.
+  if (aids.size === 0 && !detail?.signature_policy?.candidates?.length) {
+    const representative = detail?.signing_authority?.representative?.actor_aid;
+    if (representative) aids.add(representative);
+  }
+  return [...aids];
+}
+
 async function checkApproval(context, input, subject, hash, policyId, grant) {
   const { client, env } = context;
   let detail;
@@ -783,6 +800,19 @@ async function checkApproval(context, input, subject, hash, policyId, grant) {
   const verify = await client.verify(grant.said, undefined, context.call());
   if (verify?.isValid !== true || verify?.status !== "verified") {
     return approvalNeeded(subject, hash, "Foundry did not verify this approval.");
+  }
+
+  // Only a person approving in Foundry Wallet counts. A custodial signer signs
+  // on the server by itself, so a signing file that named one would approve
+  // commands with nobody involved.
+  const aids = signedAids(detail);
+  const { signers } = await client.listSigners({ mode: "edge" }, context.call());
+  const people = new Set((Array.isArray(signers) ? signers : []).map((signer) => signer?.aid));
+  if (aids.length === 0 || aids.some((aid) => !people.has(aid))) {
+    await dropGrant(env, hash);
+    return denial(
+      `Foundry gate: this approval was not signed by a person in Foundry Wallet, so it does not count. Command: ${shown(subject.command)} Name only Wallet signers in the signing file.`,
+    );
   }
 
   // Single use. Record a claim on the trustable, read the chain back, and run
