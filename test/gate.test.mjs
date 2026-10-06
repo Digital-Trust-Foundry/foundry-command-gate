@@ -71,7 +71,7 @@ test("an ambiguous command is refused without opening a Wallet request", async (
     const { env } = await setup(stub.endpoint);
     const result = await run(hookInput('bash -c "git push"'), env);
     assert.equal(decisionOf(result), "deny");
-    assert.match(reasonOf(result), /Run `git push` as a plain command/);
+    assert.match(reasonOf(result), /Run `git push` on its own as a plain command/);
     assert.equal(stub.requests.length, 0);
   });
 });

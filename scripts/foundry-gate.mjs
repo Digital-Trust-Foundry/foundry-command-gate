@@ -314,32 +314,70 @@ function literalDir(word) {
 }
 
 /**
- * The parser's match, plus the directories the command moves to on the way,
- * from an earlier `cd app` or from `git -C app`, so the branch and commit are
- * read from the repository the command acts on.
+ * The parser's match, plus the directories a git command moves to on the way:
+ * an earlier `cd app` or `git -C app`. The branch and commit are read from that
+ * repository. When the repository cannot be read for certain (a variable, `cd
+ * -`, `--git-dir`, a cd whose subshell has closed, a git command inside `$( )`,
+ * or two git commands in one call), `dirs` is null and the command is refused
+ * as a form the gate cannot check.
  */
 function parsedMatch(command, policy) {
   const { segments, substitutions } = splitCommand(command);
+  let found = null;
+  let gitTargets = 0;
+  let unknown = /\bGIT_(?:DIR|WORK_TREE)\b/.test(command);
   for (const inner of substitutions) {
     const nested = parsedMatch(inner, policy);
-    if (nested) return { entry: nested.entry, dirs: [] };
-  }
-  const dirs = [];
-  for (const segment of segments) {
-    // Subshells and groups, `(cd app && git push)` and `{ git push; }`, read as the command inside.
-    const bare = segment.replace(/^[\s({]+/, "").replace(/[\s)}]+$/, "");
-    if (!bare) continue;
-    const words = wordsOf(bare);
-    if (words[0] === "cd" && words.length === 2 && literalDir(words[1])) dirs.push(literalDir(words[1]));
-    const entry = policy.find((candidate) => entryMatches(words, candidate));
-    if (entry) {
-      for (let i = 1; i < words.length - 1; i += 1) {
-        if (words[i] === "-C" && literalDir(words[i + 1])) dirs.push(literalDir(words[i + 1]));
-      }
-      return { entry, dirs };
+    if (!nested) continue;
+    found = found ?? nested.entry;
+    if (nested.entry.program === "git") {
+      gitTargets += 1;
+      unknown = true;
     }
   }
-  return null;
+
+  const dirs = [];
+  let depth = 0;
+  let matchedDirs = null;
+  for (const segment of segments) {
+    // Subshells and groups, `(cd app && git push)` and `{ git push; }`, read as the command inside.
+    const opens = (segment.match(/^[\s({]+/)?.[0].match(/[({]/g) ?? []).length;
+    const closes = (segment.match(/[\s)}]+$/)?.[0].match(/[)}]/g) ?? []).length;
+    const bare = segment.replace(/^[\s({]+/, "").replace(/[\s)}]+$/, "");
+    depth += opens;
+    const words = bare ? wordsOf(bare) : [];
+    if (["cd", "pushd", "popd"].includes(words[0])) {
+      if (matchedDirs === null) {
+        const dir = words[0] === "cd" && words.length === 2 ? literalDir(words[1]) : null;
+        if (dir) dirs.push({ dir, depth });
+        else unknown = true;
+      }
+    } else {
+      const entry = words.length > 0 ? policy.find((candidate) => entryMatches(words, candidate)) : null;
+      if (entry) {
+        found = found ?? entry;
+        if (entry.program === "git") {
+          gitTargets += 1;
+          const here = dirs.map((step) => step.dir);
+          for (let i = 1; i < words.length; i += 1) {
+            const flag = flagName(words[i]);
+            if (flag === "--git-dir" || flag === "--work-tree") unknown = true;
+            if (words[i] === "-C") {
+              const dir = literalDir(words[i + 1]);
+              if (dir) here.push(dir);
+              else unknown = true;
+            }
+          }
+          matchedDirs = matchedDirs ?? here;
+        }
+      }
+    }
+    depth -= closes;
+    // A cd inside a subshell that has closed no longer applies.
+    if (matchedDirs === null && dirs.some((step) => step.depth > depth)) unknown = true;
+  }
+  if (!found) return null;
+  return { entry: found, dirs: unknown || gitTargets > 1 ? null : (matchedDirs ?? []) };
 }
 
 function hasWord(text, word) {
@@ -393,6 +431,9 @@ export function matchPolicy(command, policy) {
     return { gated: false, ambiguous: false, unreadable: true, entry: null };
   }
   const parsed = parsedMatch(command, policy);
+  if (parsed && parsed.dirs === null) {
+    return { gated: false, ambiguous: true, unreadable: false, entry: parsed.entry, dirs: null };
+  }
   if (parsed) return { gated: true, ambiguous: false, unreadable: false, entry: parsed.entry, dirs: parsed.dirs };
   const mentioned = policy.find((candidate) => mentions(command, candidate));
   if (mentioned) return { gated: false, ambiguous: true, unreadable: false, entry: mentioned };
@@ -779,7 +820,7 @@ async function preToolUse(input, context) {
   if (matched.ambiguous) {
     const name = entryName(matched.entry);
     return denial(
-      `Foundry gate: this command mentions \`${name}\` in a form the gate cannot check, such as a wrapper, a shell inside a shell, an alias or an API call. Run \`${name}\` as a plain command so it can be approved. If it does not run \`${name}\`, write it so those words do not appear together.`,
+      `Foundry gate: this command mentions \`${name}\` in a form the gate cannot check, such as a wrapper, a shell inside a shell, an alias, an API call, or a change of repository it cannot follow. Run \`${name}\` on its own as a plain command, from the repository folder or with \`git -C <folder>\`, so it can be approved. If it does not run \`${name}\`, write it so those words do not appear together.`,
     );
   }
   if (!matched.gated) return { exitCode: 0 };
