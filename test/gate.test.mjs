@@ -146,8 +146,9 @@ test("two identical calls at the same moment run the command once", async () => 
       run(hookInput("git push", { tool_use_id: "toolu_b" }), env),
     ]);
     const ran = results.filter((result) => result.exitCode === 0 && result.output === undefined);
-    assert.equal(ran.length, 1);
-    assert.equal(results.filter((result) => decisionOf(result) === "deny").length, 1);
+    assert.equal(ran.length, 1, JSON.stringify(results));
+    // The other one is refused, or blocked if Windows held the cache file; either way it does not run.
+    assert.equal(results.filter((result) => decisionOf(result) === "deny" || result.exitCode === 2).length, 1);
   });
 });
 
