@@ -14,6 +14,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
 import { mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { FoundryClient, FoundryError } from "./vendor/foundry-sdk.mjs";
 
@@ -306,19 +307,37 @@ function entryMatches(words, entry) {
   return entry.subcommand.every((part, index) => significant[index] === part);
 }
 
+/** A literal directory a `cd` or `-C` names, or null when only the shell could tell. */
+function literalDir(word) {
+  if (!word || word === "-" || /[$`*?]/.test(word)) return null;
+  return word.startsWith("~/") || word === "~" ? path.join(os.homedir(), word.slice(1)) : word;
+}
+
+/**
+ * The parser's match, plus the directories the command moves to on the way,
+ * from an earlier `cd app` or from `git -C app`, so the branch and commit are
+ * read from the repository the command acts on.
+ */
 function parsedMatch(command, policy) {
   const { segments, substitutions } = splitCommand(command);
   for (const inner of substitutions) {
     const nested = parsedMatch(inner, policy);
-    if (nested) return nested;
+    if (nested) return { entry: nested.entry, dirs: [] };
   }
+  const dirs = [];
   for (const segment of segments) {
     // Subshells and groups, `(cd app && git push)` and `{ git push; }`, read as the command inside.
     const bare = segment.replace(/^[\s({]+/, "").replace(/[\s)}]+$/, "");
     if (!bare) continue;
     const words = wordsOf(bare);
+    if (words[0] === "cd" && words.length === 2 && literalDir(words[1])) dirs.push(literalDir(words[1]));
     const entry = policy.find((candidate) => entryMatches(words, candidate));
-    if (entry) return entry;
+    if (entry) {
+      for (let i = 1; i < words.length - 1; i += 1) {
+        if (words[i] === "-C" && literalDir(words[i + 1])) dirs.push(literalDir(words[i + 1]));
+      }
+      return { entry, dirs };
+    }
   }
   return null;
 }
@@ -347,7 +366,8 @@ function mentions(command, entry) {
   const joined = command.replace(/\\\r?\n/g, "").replace(/\$'((?:[^'\\]|\\.)*)'/g, "$1");
   const unquoted = joined.replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, " ");
   const runs = RUNNERS.some((word) => hasWord(unquoted, word));
-  const text = (runs ? joined : unquoted).replace(/[\\"'`]/g, "");
+  // A variable can carry a quoted word into the command: `c='git'; $c push`.
+  const text = (runs || unquoted.includes("$") ? joined : unquoted).replace(/[\\"'`]/g, "");
   const words = [entry.program, ...entry.subcommand];
   // Without a runner or a variable, the words have to meet in one command:
   // `git log | grep push` is two commands and neither one pushes.
@@ -372,8 +392,8 @@ export function matchPolicy(command, policy) {
   if (typeof command !== "string" || !command.trim()) {
     return { gated: false, ambiguous: false, unreadable: true, entry: null };
   }
-  const entry = parsedMatch(command, policy);
-  if (entry) return { gated: true, ambiguous: false, unreadable: false, entry };
+  const parsed = parsedMatch(command, policy);
+  if (parsed) return { gated: true, ambiguous: false, unreadable: false, entry: parsed.entry, dirs: parsed.dirs };
   const mentioned = policy.find((candidate) => mentions(command, candidate));
   if (mentioned) return { gated: false, ambiguous: true, unreadable: false, entry: mentioned };
   return { gated: false, ambiguous: false, unreadable: false, entry: null };
@@ -781,7 +801,7 @@ async function preToolUse(input, context) {
   }
 
   const cwd = typeof input.cwd === "string" && input.cwd ? input.cwd : process.cwd();
-  const git = matched.entry.program === "git" ? gitContext(cwd) : null;
+  const git = matched.entry.program === "git" ? gitContext(path.resolve(cwd, ...matched.dirs)) : null;
   const subject = approvalSubject(toolName, command, cwd, git);
   const hash = contentHash(subject);
   const policyId = entryName(matched.entry);
@@ -826,7 +846,7 @@ async function settle(input, context) {
     const grant = await readGrant(context.env, hash);
     if (!grant || grant.status !== "claimed" || grant.tool_use_id !== input.tool_use_id) continue;
     const client = context.makeClient(settings.endpoint, settings.apiKey);
-    await client.appendEvent(
+    const outcome = await client.appendEvent(
       grant.said,
       {
         lifecycle: {
@@ -841,7 +861,7 @@ async function settle(input, context) {
       },
       context.call(),
     );
-    await dropGrant(context.env, hash);
+    if (outcome?.kind === "completed") await dropGrant(context.env, hash);
   }
 }
 

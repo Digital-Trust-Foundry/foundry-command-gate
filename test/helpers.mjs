@@ -89,6 +89,7 @@ export function startStub() {
     hang: false,
     hangCreatesOnce: false,
     beforeClaim: null,
+    executePending: false,
   };
 
   const json = (res, status, body) => {
@@ -149,6 +150,15 @@ export function startStub() {
     if (req.method === "POST" && eventsMatch) {
       const entry = trustables.get(decodeURIComponent(eventsMatch[1]));
       if (!entry) return json(res, 404, { error: "NOT_FOUND", message: "no such trustable" });
+      if (body.lifecycle.event === "execute" && state.executePending) {
+        return json(res, 202, {
+          request_id: "req-execute",
+          event_said: "evt-pending",
+          appended_at: new Date().toISOString(),
+          registry_pointers: { receipts: [] },
+          status: { current_state: "pending_signature" },
+        });
+      }
       if (body.lifecycle.event === "claim" && state.beforeClaim) {
         state.beforeClaim(entry);
         state.beforeClaim = null;

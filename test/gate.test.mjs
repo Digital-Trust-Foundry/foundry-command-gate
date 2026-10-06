@@ -252,6 +252,24 @@ test("a new commit after the approval needs a new approval", async () => {
   });
 });
 
+test("the branch and commit come from the repository the command acts on", async () => {
+  await withStub(async (stub) => {
+    const { env } = await setup(stub.endpoint);
+    const parent = await tempDir("foundry-gate-parent-");
+    const repo = path.join(parent, "app");
+    execFileSync("git", ["init", "-q", "-b", "trunk", repo], { stdio: "ignore" });
+    const git = (...args) => execFileSync("git", ["-C", repo, ...args], { stdio: "ignore" });
+    git("-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "--allow-empty", "-m", "one");
+    const head = execFileSync("git", ["-C", repo, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+
+    for (const command of ["git -C app push", "cd app && git push"]) {
+      await run(hookInput(command, { cwd: parent }), env);
+      const sent = creates(stub.requests).at(-1).body.content.git;
+      assert.deepEqual(sent, { branch: "trunk", head }, command);
+    }
+  });
+});
+
 test("a create that timed out is resent with the same key, not as a second request", async () => {
   await withStub(async (stub) => {
     const { env } = await setup(stub.endpoint);
@@ -290,6 +308,12 @@ test("PostToolUse records the run for the claimed approval and never blocks", as
     const [execute] = appends(stub.requests, "execute");
     assert.equal(execute.body.event_content.tool_use_id, "toolu_1");
     assert.equal((await grants(data)).length, 0);
+
+    await run(hookInput("git push", { tool_use_id: "toolu_5" }), env);
+    await run(hookInput("git push", { tool_use_id: "toolu_5" }), env);
+    stub.state.executePending = true;
+    await run({ ...hookInput("git push"), hook_event_name: "PostToolUse", tool_use_id: "toolu_5" }, env);
+    assert.equal((await grants(data)).length, 1, "a run record Foundry did not complete keeps its grant");
 
     stub.state.hang = true;
     await run(hookInput("git push", { tool_use_id: "toolu_9" }), env).catch(() => {});
