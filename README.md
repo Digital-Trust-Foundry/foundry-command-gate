@@ -4,7 +4,7 @@ A Claude Code plugin from Digital Trust Foundry. It stops the shell commands you
 
 Every approval is a signed record on your Foundry tenant. An auditor can verify who approved which command, and when, after the chat is gone.
 
-A Foundry tenant is required. To get one, email sales@digitaltrustfoundry.com.
+A Foundry tenant is required. To get one, email sales@digitaltrustfoundry.com. To try it end to end in about 15 minutes, follow [Try the Foundry Command Gate](docs/try-it.md).
 
 ## What it is, and what it is not
 
