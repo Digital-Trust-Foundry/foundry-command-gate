@@ -10,6 +10,7 @@
   "homepage": "https://github.com/Digital-Trust-Foundry/foundry-command-gate",
   "repository": "https://github.com/Digital-Trust-Foundry/foundry-command-gate",
   "documentationUrl": "https://github.com/Digital-Trust-Foundry/foundry-command-gate#readme",
+  "icon": "./.claude-plugin/icon.png",
   "license": "LicenseRef-DTF-Command-Gate",
   "keywords": [
     "approval",
