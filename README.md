@@ -4,7 +4,7 @@ A Claude Code plugin from Digital Trust Foundry. It stops the shell commands you
 
 Every approval is a signed record on your Foundry tenant. An auditor can verify who signed which command, and when, after the chat is gone.
 
-A Foundry tenant is required. An administrator of that tenant adds the officer as a user, and the officer initializes Foundry Wallet, before any command can be signed. To request a tenant, email info@digitaltrustfoundry.com. Once that Wallet exists, [Try the Foundry Command Gate](docs/try-it.md) walks through a push on a local repository.
+A Foundry tenant is required. An administrator of that tenant adds the officer as a user, and the officer initializes Foundry Wallet, before any command can be signed. To request a tenant, email info@digitaltrustfoundry.com with the enterprise making the request, a contact, and the use case. Once that Wallet exists, [Try the Foundry Command Gate](docs/try-it.md) walks through a push on a local repository.
 
 ## What it is, and what it is not
 
