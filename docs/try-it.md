@@ -113,4 +113,4 @@ claude plugin marketplace remove foundry-command-gate
 
 ## For directory reviewers
 
-The test tenant address, the API key, the signing file and the sign-in for the test signer's Foundry Wallet are in the submission. Questions during the review go to sales@digitaltrustfoundry.com.
+The test tenant address, the API key, the signing file and the sign-in for the test signer's Foundry Wallet are in the submission. Questions during the review go to info@digitaltrustfoundry.com.

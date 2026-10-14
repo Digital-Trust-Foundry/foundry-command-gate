@@ -1,10 +1,10 @@
 # Foundry Command Gate
 
-A Claude Code plugin from Digital Trust Foundry. It stops the shell commands your organization names, such as `git push`, `gh pr merge` or a deploy, until an officer of the company approves that exact command in Foundry Wallet. The approved command then runs once. A different command, a different directory or a new commit needs a new approval. If Foundry cannot be reached, the command does not run.
+A Claude Code plugin from Digital Trust Foundry. It stops the shell commands your organization names, such as `git push`, `gh pr merge` or a deploy, until an officer of the company signs that exact command in Foundry Wallet. That command then runs once. A different command, a different directory or a new commit needs a new approval. If Foundry cannot be reached, the command does not run.
 
-Every approval is a signed record on your Foundry tenant. An auditor can verify who approved which command, and when, after the chat is gone.
+Every approval is a signed record on your Foundry tenant. An auditor can verify who signed which command, and when, after the chat is gone.
 
-A Foundry tenant is required. To get one, email sales@digitaltrustfoundry.com. To try it end to end in about 15 minutes, follow [Try the Foundry Command Gate](docs/try-it.md).
+A Foundry tenant is required. To get one, email info@digitaltrustfoundry.com. To try it end to end in about 15 minutes, follow [Try the Foundry Command Gate](docs/try-it.md).
 
 ## What it is, and what it is not
 

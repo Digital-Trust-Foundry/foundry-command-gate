@@ -2,7 +2,7 @@
   "name": "foundry-gate",
   "displayName": "Foundry Command Gate",
   "version": "0.2.0",
-  "description": "Stops the shell commands your organization names, such as git push or a deploy, until an officer approves that exact command in Foundry Wallet. Then it runs once.",
+  "description": "Stops the shell commands your organization names, such as git push or a deploy, until an officer signs that exact command in Foundry Wallet. Then it runs once.",
   "author": {
     "name": "Digital Trust Foundry",
     "url": "https://github.com/Digital-Trust-Foundry/foundry-command-gate"
