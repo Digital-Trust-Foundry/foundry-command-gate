@@ -2,12 +2,12 @@
   "name": "foundry-gate",
   "displayName": "Foundry Gate",
   "version": "0.1.0",
-  "description": "Denies a named command until a Foundry Wallet signer approves that exact command, then allows it once.",
+  "description": "Denies a named command until an officer signs that exact command in a Foundry Wallet, then allows it once.",
   "author": {
     "name": "Digital Trust Foundry",
     "url": "https://github.com/Digital-Trust-Foundry/foundry-command-gate"
   },
   "repository": "https://github.com/Digital-Trust-Foundry/foundry-command-gate",
-  "license": "UNLICENSED",
+  "license": "LicenseRef-DTF-Command-Gate",
   "keywords": ["foundry", "approval", "hooks"]
 }

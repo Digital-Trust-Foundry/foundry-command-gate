@@ -1,5 +1,84 @@
-Copyright Digital Trust Foundry. All rights reserved.
+Foundry Command Gate
+Copyright 2026 DTF Solutions Inc. All rights reserved.
 
-This repository is private while the plugin is being built and tested.
-A distribution license is chosen when the repository is opened, which is a
-separate decision after the release check in the README.
+This license covers the source files in this repository at the commit
+you received. It does not cover a Foundry tenant, the Trustables API,
+Foundry Wallet, API credentials, or any document that is not in this
+repository.
+
+1. Grant
+
+DTF Solutions Inc. grants you a non-exclusive license to:
+
+  a. install, run, and read this plugin;
+  b. modify it for use inside your own organization; and
+  c. make and distribute unmodified copies of this repository, with
+     this license and the copyright notice intact.
+
+You may do so only to connect Claude Code to a Digital Trust Foundry
+tenant that you are authorized to use under a separate agreement with
+DTF Solutions Inc. This license does not give you that tenant, those
+credentials, or that agreement.
+
+2. Directory distribution
+
+DTF Solutions Inc. permits Anthropic to reproduce this repository and
+to pin a commit of it in the Claude plugin directory, so that a customer
+administrator can install the plugin from that listing.
+
+3. What this license does not grant
+
+This license does not grant:
+
+  a. any right to the Foundry service, including the Trustables API
+     or Foundry Wallet, except as your separate customer agreement
+     provides;
+  b. any patent license;
+  c. any trademark license in Digital Trust Foundry, Foundry,
+     Trustable, Trustable Command Gate, or Foundry Command Gate; or
+  d. any right to present a modified copy as the official plugin, or
+     to use those names on a modified copy.
+
+A modified copy that you redistribute must carry this license, must
+carry the copyright notice, and must not use those names.
+
+4. No warranty
+
+THE PLUGIN IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING ANY WARRANTY OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE, OR NON-INFRINGEMENT. THE PLUGIN DOES NOT, BY
+ITSELF, PROVE THAT AN OFFICER SIGNED A COMMAND. THAT SIGNATURE, WHERE
+IT EXISTS, IS A RECORD IN THE FOUNDRY SERVICE. AN AUDITOR VERIFIES IT
+UNDER THE CUSTOMER AGREEMENT, NOT UNDER THIS LICENSE.
+
+5. Liability
+
+TO THE EXTENT THE LAW ALLOWS, DTF SOLUTIONS INC. WILL NOT BE LIABLE FOR
+ANY CLAIM OR DAMAGES ARISING OUT OF THIS PLUGIN OR THIS LICENSE, WHETHER
+IN CONTRACT, TORT, OR OTHERWISE, INCLUDING LOST PROFITS, LOST DATA, OR A
+COMMAND THAT RAN OR DID NOT RUN. SOME JURISDICTIONS DO NOT ALLOW THESE
+EXCLUSIONS, IN WHICH CASE THEY APPLY TO THE EXTENT THE LAW ALLOWS. THIS
+EXCLUSION IS NOT LIMITED BY ANY CAP IN THE CUSTOMER AGREEMENT.
+
+6. Termination
+
+This license ends if you materially breach it and do not cure the
+breach within thirty days after DTF Solutions Inc. notifies you.
+Sections 3, 4, 5, and 7 survive. Ending this license does not end a
+separate customer agreement.
+
+7. Governing law
+
+This license is governed by the laws of the State of California, without
+regard to conflict-of-law rules. The state and federal courts located in
+California have exclusive jurisdiction, except that DTF Solutions Inc.
+may seek injunctive relief in any court of competent jurisdiction for a
+breach of section 3.
+
+8. The customer agreement controls the service
+
+If this license and your Foundry customer agreement both speak to the
+same point about the Trustables API, Foundry Wallet, or a tenant, the
+customer agreement controls. This license controls your rights in the
+source files of this repository. Section 5 controls liability for the
+plugin and for this license.
