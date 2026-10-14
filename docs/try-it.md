@@ -1,6 +1,8 @@
 # Try the Foundry Command Gate
 
-This guide takes you from installing the plugin to a command approved in Foundry Wallet, in about 15 minutes. It is for anyone evaluating the plugin, including directory reviewers. Nothing in it touches a real repository: every push goes to a local test copy on your machine.
+This guide walks an officer who already has Foundry Wallet through a push on a local repository. It takes about 15 minutes. The pushes go to a folder on your machine.
+
+A Wallet cannot be created from this guide. A tenant administrator adds you as a user first. You then initialize Foundry Wallet. If you do not have a tenant, email info@digitaltrustfoundry.com.
 
 ## What you will see
 
@@ -27,9 +29,9 @@ sequenceDiagram
 | --- | --- |
 | Claude Code, signed in | claude.com/claude-code |
 | Node.js 22 or newer, and Git | nodejs.org and git-scm.com. On Windows, Git for Windows, which includes Git Bash |
-| Test tenant address and API key | Provided with this guide |
-| Signing file for the test signer | Provided with this guide, a small JSON file |
-| Foundry Wallet, signed in as the test signer | Provided with this guide |
+| Tenant address and API key | Your tenant administrator |
+| Signing file naming your Wallet | Your tenant administrator. The README shows the file |
+| Foundry Wallet, signed in as you | Initialized after the administrator adds you as a user |
 
 Save the signing file where only you can write it, for example in your home folder. On macOS and Linux, run `chmod 600 signing.json`.
 
@@ -44,8 +46,8 @@ Open Claude Code and run `/plugin configure foundry-gate@foundry-command-gate`. 
 
 | Setting | Value |
 | --- | --- |
-| Foundry endpoint | The test tenant address |
-| API key | The test API key. Claude Code keeps it in the system keychain. |
+| Foundry endpoint | Your tenant address |
+| API key | Your tenant API key. Claude Code keeps it in the system keychain. |
 | Signing file | The full path to `signing.json` |
 | Gated commands | Leave the default, `git push, gh pr merge` |
 
@@ -110,7 +112,3 @@ Ask Claude: *Run bash -c "git push origin main".* The command is refused straigh
 claude plugin uninstall foundry-gate@foundry-command-gate
 claude plugin marketplace remove foundry-command-gate
 ```
-
-## For directory reviewers
-
-The test tenant address, the API key, the signing file and the sign-in for the test signer's Foundry Wallet are in the submission. Questions during the review go to info@digitaltrustfoundry.com.
