@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/sh ${CLAUDE_PLUGIN_ROOT}/scripts/foundry-gate",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/foundry-gate\"",
             "timeout": 10
           }
         ]
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/sh ${CLAUDE_PLUGIN_ROOT}/scripts/foundry-gate",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/foundry-gate\"",
             "timeout": 10
           }
         ]
